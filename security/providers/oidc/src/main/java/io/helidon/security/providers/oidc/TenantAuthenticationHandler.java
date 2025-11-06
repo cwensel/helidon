@@ -114,6 +114,24 @@ class TenantAuthenticationHandler {
             this.jwtValidator = (signedJwt, collector) -> {
                 JwkKeys jwk = tenant.signJwk();
                 Errors errors = signedJwt.verifySignature(jwk);
+
+                if (!errors.isValid() && tenantConfig.jwkRefreshOnValidationFailure()) {
+                    LOGGER.log(System.Logger.Level.DEBUG,
+                              "JWT signature validation failed, attempting JWK refresh");
+
+                    JwkKeys freshJwk = tenant.signJwk(true);
+                    if (freshJwk != jwk) {
+                        errors = signedJwt.verifySignature(freshJwk);
+                        if (errors.isValid()) {
+                            LOGGER.log(System.Logger.Level.INFO,
+                                      "JWT validation succeeded after JWK refresh");
+                        } else {
+                            LOGGER.log(System.Logger.Level.WARNING,
+                                      "JWT validation still failed after JWK refresh");
+                        }
+                    }
+                }
+
                 errors.forEach(errorMessage -> {
                     switch (errorMessage.getSeverity()) {
                     case FATAL:

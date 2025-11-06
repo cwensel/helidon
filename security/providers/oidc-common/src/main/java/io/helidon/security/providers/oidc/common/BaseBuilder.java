@@ -74,6 +74,12 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private boolean optionalAudience = false;
     // Whether to check audience claim (turned on by default)
     private boolean checkAudience = true;
+    private boolean jwkCacheRefreshEnabled = false;
+    private boolean jwkHonorCacheControl = true;
+    private Duration jwkCacheMinTtl = Duration.ofMinutes(5);
+    private Duration jwkCacheMaxTtl = Duration.ofHours(24);
+    private Duration jwkCacheDefaultTtl = Duration.ofHours(1);
+    private boolean jwkRefreshOnValidationFailure = true;
 
     BaseBuilder() {
     }
@@ -142,6 +148,16 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
         config.get("optional-audience").asBoolean().ifPresent(this::optionalAudience);
         config.get("check-audience").asBoolean().ifPresent(this::checkAudience);
+        config.get("jwk-cache-refresh-enabled").asBoolean().ifPresent(this::jwkCacheRefreshEnabled);
+        config.get("jwk-honor-cache-control").asBoolean().ifPresent(this::jwkHonorCacheControl);
+        config.get("jwk-cache-min-ttl-minutes").asLong()
+                .ifPresent(m -> jwkCacheMinTtl(Duration.ofMinutes(m)));
+        config.get("jwk-cache-max-ttl-minutes").asLong()
+                .ifPresent(m -> jwkCacheMaxTtl(Duration.ofMinutes(m)));
+        config.get("jwk-cache-default-ttl-minutes").asLong()
+                .ifPresent(m -> jwkCacheDefaultTtl(Duration.ofMinutes(m)));
+        config.get("jwk-refresh-on-validation-failure").asBoolean()
+                .ifPresent(this::jwkRefreshOnValidationFailure);
         return identity();
     }
 
@@ -574,5 +590,112 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     JwkKeys contentKeyDecryptionKeys() {
         return contentKeyDecryptionKeys;
+    }
+
+    boolean jwkCacheRefreshEnabled() {
+        return jwkCacheRefreshEnabled;
+    }
+
+    boolean jwkHonorCacheControl() {
+        return jwkHonorCacheControl;
+    }
+
+    Duration jwkCacheMinTtl() {
+        return jwkCacheMinTtl;
+    }
+
+    Duration jwkCacheMaxTtl() {
+        return jwkCacheMaxTtl;
+    }
+
+    Duration jwkCacheDefaultTtl() {
+        return jwkCacheDefaultTtl;
+    }
+
+    boolean jwkRefreshOnValidationFailure() {
+        return jwkRefreshOnValidationFailure;
+    }
+
+    /**
+     * Whether to enable JWK cache refresh. When disabled (default), JWK keys are loaded
+     * once and never refreshed. When enabled, keys are refreshed based on TTL and
+     * Cache-Control headers.
+     *
+     * @param enabled whether to enable JWK cache refresh
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-cache-refresh-enabled", value = "false")
+    public B jwkCacheRefreshEnabled(boolean enabled) {
+        this.jwkCacheRefreshEnabled = enabled;
+        return identity();
+    }
+
+    /**
+     * Whether to honor Cache-Control headers from JWKS endpoint. When enabled (default),
+     * the max-age directive is used for cache TTL. When disabled, always uses the
+     * configured default TTL.
+     *
+     * @param honor whether to honor Cache-Control headers
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-honor-cache-control", value = "true")
+    public B jwkHonorCacheControl(boolean honor) {
+        this.jwkHonorCacheControl = honor;
+        return identity();
+    }
+
+    /**
+     * Minimum allowed TTL for cached JWK keys.
+     * If the Cache-Control max-age from the JWKS endpoint is lower than this value,
+     * this minimum will be used instead.
+     *
+     * @param minTtl minimum TTL duration
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-cache-min-ttl-minutes", value = "5")
+    public B jwkCacheMinTtl(Duration minTtl) {
+        this.jwkCacheMinTtl = minTtl;
+        return identity();
+    }
+
+    /**
+     * Maximum allowed TTL for cached JWK keys.
+     * If the Cache-Control max-age from the JWKS endpoint is higher than this value,
+     * this maximum will be used instead.
+     *
+     * @param maxTtl maximum TTL duration
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-cache-max-ttl-minutes", value = "1440")
+    public B jwkCacheMaxTtl(Duration maxTtl) {
+        this.jwkCacheMaxTtl = maxTtl;
+        return identity();
+    }
+
+    /**
+     * Default TTL for cached JWK keys when no Cache-Control header is provided
+     * by the JWKS endpoint.
+     *
+     * @param defaultTtl default TTL duration
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-cache-default-ttl-minutes", value = "60")
+    public B jwkCacheDefaultTtl(Duration defaultTtl) {
+        this.jwkCacheDefaultTtl = defaultTtl;
+        return identity();
+    }
+
+    /**
+     * Whether to attempt refreshing JWK keys when JWT signature validation fails.
+     * When enabled, if signature validation fails, the system will fetch fresh JWK keys
+     * and retry validation once. This helps handle key rotation scenarios.
+     *
+     * @param refresh whether to refresh JWK keys on validation failure
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-refresh-on-validation-failure", value = "true")
+    public B jwkRefreshOnValidationFailure(boolean refresh) {
+        this.jwkRefreshOnValidationFailure = refresh;
+        return identity();
     }
 }

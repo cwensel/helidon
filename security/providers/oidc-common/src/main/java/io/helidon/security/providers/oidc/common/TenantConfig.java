@@ -203,6 +203,48 @@ public interface TenantConfig {
     }
 
     /**
+     * Whether JWK cache refresh is enabled.
+     *
+     * @return whether JWK cache refresh is enabled
+     */
+    boolean jwkCacheRefreshEnabled();
+
+    /**
+     * Whether to honor Cache-Control headers from JWKS endpoint.
+     *
+     * @return whether to honor Cache-Control headers
+     */
+    boolean jwkHonorCacheControl();
+
+    /**
+     * Minimum allowed TTL for cached JWK keys.
+     *
+     * @return minimum TTL duration
+     */
+    Duration jwkCacheMinTtl();
+
+    /**
+     * Maximum allowed TTL for cached JWK keys.
+     *
+     * @return maximum TTL duration
+     */
+    Duration jwkCacheMaxTtl();
+
+    /**
+     * Default TTL for cached JWK keys.
+     *
+     * @return default TTL duration
+     */
+    Duration jwkCacheDefaultTtl();
+
+    /**
+     * Whether to refresh JWK keys on validation failure.
+     *
+     * @return whether to refresh on validation failure
+     */
+    boolean jwkRefreshOnValidationFailure();
+
+    /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link TenantConfig}.
      */
     @Configured(description = "Open ID Connect tenant configuration")

@@ -54,6 +54,12 @@ class TenantConfigImpl implements TenantConfig {
     private final JsonObject oidcMetadata;
     private final boolean useWellKnown;
     private final String name;
+    private final boolean jwkCacheRefreshEnabled;
+    private final boolean jwkHonorCacheControl;
+    private final Duration jwkCacheMinTtl;
+    private final Duration jwkCacheMaxTtl;
+    private final Duration jwkCacheDefaultTtl;
+    private final boolean jwkRefreshOnValidationFailure;
 
     TenantConfigImpl(BaseBuilder<?, ?> builder) {
         this.name = builder.name();
@@ -71,6 +77,12 @@ class TenantConfigImpl implements TenantConfig {
         this.authorizationEndpointUri = builder.authorizationEndpointUri();
         this.logoutEndpointUri = builder.logoutEndpointUri();
         this.serverType = builder.serverType();
+        this.jwkCacheRefreshEnabled = builder.jwkCacheRefreshEnabled();
+        this.jwkHonorCacheControl = builder.jwkHonorCacheControl();
+        this.jwkCacheMinTtl = builder.jwkCacheMinTtl();
+        this.jwkCacheMaxTtl = builder.jwkCacheMaxTtl();
+        this.jwkCacheDefaultTtl = builder.jwkCacheDefaultTtl();
+        this.jwkRefreshOnValidationFailure = builder.jwkRefreshOnValidationFailure();
 
         this.clientSecret = builder.clientSecret();
         this.signJwk = builder.signJwk();
@@ -206,5 +218,35 @@ class TenantConfigImpl implements TenantConfig {
     @Override
     public Optional<JwkKeys> contentKeyDecryptionKeys() {
         return Optional.ofNullable(contentKeyDecryptionKeys);
+    }
+
+    @Override
+    public boolean jwkCacheRefreshEnabled() {
+        return jwkCacheRefreshEnabled;
+    }
+
+    @Override
+    public boolean jwkHonorCacheControl() {
+        return jwkHonorCacheControl;
+    }
+
+    @Override
+    public Duration jwkCacheMinTtl() {
+        return jwkCacheMinTtl;
+    }
+
+    @Override
+    public Duration jwkCacheMaxTtl() {
+        return jwkCacheMaxTtl;
+    }
+
+    @Override
+    public Duration jwkCacheDefaultTtl() {
+        return jwkCacheDefaultTtl;
+    }
+
+    @Override
+    public boolean jwkRefreshOnValidationFailure() {
+        return jwkRefreshOnValidationFailure;
     }
 }
